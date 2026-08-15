@@ -27,7 +27,7 @@ const FIELDS: { key: keyof Analysis; label: string }[] = [
   { key: "material", label: "Material" },
 ];
 
-// Mock AI response — will be replaced by a real call to POST /wardrobe/analyze.
+// Mock AI response — will be replaced by a real call to POST /wardrobe/analyze in Phase 7.
 const MOCK_ANALYSIS: Analysis = {
   category: "Top",
   subcategory: "Tailored blazer",
@@ -46,6 +46,7 @@ export default function Upload() {
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0];
@@ -69,15 +70,50 @@ export default function Upload() {
     setAnalysis({ ...analysis, [field]: e.target.value });
   };
 
-  const confirmSave = () => {
+  const confirmSave = async () => {
+    if (!analysis) return;
+    setError("");
     setSaving(true);
-    // No backend yet — this is where we'll POST the image + confirmed fields
-    // to /wardrobe/items once the backend exists.
-    console.log("Saving item:", analysis);
-    setTimeout(() => {
-      setSaving(false);
+
+    try {
+      const token = localStorage.getItem("selea_token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      // NOTE: real image upload/storage isn't built yet (Phase 7). Using a
+      // placeholder URL for now so the record can still be created.
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/wardrobe/items`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          image_url: preview ?? "https://placehold.co/400x500",
+          category: analysis.category,
+          subcategory: analysis.subcategory,
+          color: analysis.color,
+          pattern: analysis.pattern,
+          style: analysis.style,
+          season: analysis.season,
+          occasion: analysis.occasion,
+          material: analysis.material,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Failed to save item");
+      }
+
       router.push("/wardrobe");
-    }, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -119,6 +155,9 @@ export default function Upload() {
                       onChange={updateField(field.key)}
                     />
                   ))}
+
+                  {error && <p className="text-sm text-red-700">{error}</p>}
+
                   <Button
                     variant="primary"
                     className="w-full"
