@@ -1,25 +1,54 @@
 "use client";
 
 import { useState, FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/input";
 
 export default function Signup() {
+  const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const update =
     (field: keyof typeof form) =>
     (e: React.ChangeEvent<HTMLInputElement>) =>
       setForm({ ...form, [field]: e.target.value });
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    setError("");
     setLoading(true);
-    // No backend yet — this is where the signup API call will go in Phase 4b.
-    console.log("Signup form submitted:", form);
-    setTimeout(() => setLoading(false), 600); // placeholder for now
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "Signup failed");
+      }
+
+      // Auto-login right after signup so the user lands in the app immediately
+      const loginRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: form.email, password: form.password }),
+      });
+      const loginData = await loginRes.json();
+      localStorage.setItem("selea_token", loginData.access_token);
+
+      router.push("/onboarding");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -52,6 +81,8 @@ export default function Signup() {
             onChange={update("password")}
             required
           />
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           <Button type="submit" variant="primary" className="w-full" disabled={loading}>
             {loading ? "Creating account…" : "Create account"}

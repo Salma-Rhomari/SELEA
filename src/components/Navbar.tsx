@@ -1,9 +1,9 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
-
-type NavbarProps = {
-  isAuthed?: boolean;
-};
 
 const NAV_LINKS = [
   { href: "/wardrobe", label: "Wardrobe" },
@@ -12,7 +12,20 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
 ];
 
-export default function Navbar({ isAuthed = false }: NavbarProps) {
+export default function Navbar() {
+  const router = useRouter();
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    setIsAuthed(!!localStorage.getItem("selea_token"));
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("selea_token");
+    setIsAuthed(false);
+    router.push("/");
+  };
+
   return (
     <nav className="flex items-center justify-between px-10 py-6 border-b border-taupe/15 bg-ivory">
       <Link href="/" className="font-serif text-2xl tracking-widest text-ink">
@@ -30,12 +43,12 @@ export default function Navbar({ isAuthed = false }: NavbarProps) {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/logout"
+          <button
+            onClick={handleLogout}
             className="text-xs uppercase tracking-wide text-taupe hover:text-ink transition-colors"
           >
             Logout
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="flex items-center gap-4">
