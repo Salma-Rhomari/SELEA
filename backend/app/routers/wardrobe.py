@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from typing import Optional
-
+from fastapi import UploadFile, File
+from app.services.ai_vision import analyze_clothing_image
 from app.database import get_db
 from app import models, schemas, auth as auth_utils
 
@@ -89,3 +90,18 @@ def delete_item(
     db.delete(item)
     db.commit()
     return {"deleted": True}
+
+@router.post("/analyze")
+async def analyze_item(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(auth_utils.get_current_user),
+):
+    image_bytes = await file.read()
+    mime_type = file.content_type or "image/jpeg"
+
+    try:
+        result = analyze_clothing_image(image_bytes, mime_type)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"AI analysis failed: {str(e)}")
+
+    return result

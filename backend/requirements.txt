@@ -12,3 +12,4 @@ anthropic
 Pillow
 python-dotenv
 email-validator
+google-genai
