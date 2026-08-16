@@ -6,6 +6,10 @@ from fastapi import UploadFile, File
 from app.services.ai_vision import analyze_clothing_image
 from app.database import get_db
 from app import models, schemas, auth as auth_utils
+import os
+import uuid
+from app.config import settings
+
 
 router = APIRouter(prefix="/wardrobe", tags=["wardrobe"])
 
@@ -103,5 +107,14 @@ async def analyze_item(
         result = analyze_clothing_image(image_bytes, mime_type)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"AI analysis failed: {str(e)}")
+
+    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
+    filename = f"{uuid.uuid4()}{ext}"
+    filepath = os.path.join(settings.upload_dir, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(image_bytes)
+
+    result["image_url"] = f"http://localhost:8000/uploads/{filename}"
 
     return result
