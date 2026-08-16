@@ -27,18 +27,6 @@ const FIELDS: { key: keyof Analysis; label: string }[] = [
   { key: "material", label: "Material" },
 ];
 
-// Mock AI response — will be replaced by a real call to POST /wardrobe/analyze in Phase 7.
-const MOCK_ANALYSIS: Analysis = {
-  category: "Top",
-  subcategory: "Tailored blazer",
-  color: "Beige",
-  pattern: "Plain",
-  style: "Elegant",
-  season: "Spring/Autumn",
-  occasion: "Formal",
-  material: "Cotton",
-};
-
 export default function Upload() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -56,13 +44,41 @@ export default function Upload() {
     setAnalysis(null);
   };
 
-  const runAnalysis = () => {
+  const runAnalysis = async () => {
+    if (!file) return;
     setAnalyzing(true);
-    // Placeholder delay simulating the AI vision call.
-    setTimeout(() => {
-      setAnalysis(MOCK_ANALYSIS);
+    setError("");
+
+    try {
+      const token = localStorage.getItem("selea_token");
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/wardrobe/analyze`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.detail || "AI analysis failed");
+      }
+
+      const data: Analysis = await res.json();
+      setAnalysis(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
       setAnalyzing(false);
-    }, 1200);
+    }
   };
 
   const updateField = (field: keyof Analysis) => (e: ChangeEvent<HTMLInputElement>) => {
@@ -141,6 +157,8 @@ export default function Upload() {
               )}
 
               {analyzing && <p className="text-taupe">Analyzing…</p>}
+
+              {error && !analysis && <p className="text-sm text-red-700 mt-3">{error}</p>}
 
               {analysis && (
                 <div className="space-y-5">
