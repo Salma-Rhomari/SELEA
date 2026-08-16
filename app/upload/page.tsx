@@ -32,6 +32,7 @@ export default function Upload() {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -42,6 +43,7 @@ export default function Upload() {
     setFile(f);
     setPreview(URL.createObjectURL(f));
     setAnalysis(null);
+    setImageUrl(null);
   };
 
   const runAnalysis = async () => {
@@ -72,8 +74,10 @@ export default function Upload() {
         throw new Error(data?.detail || "AI analysis failed");
       }
 
-      const data: Analysis = await res.json();
-      setAnalysis(data);
+      const data = await res.json();
+      const { image_url, ...analysisFields } = data;
+      setAnalysis(analysisFields as Analysis);
+      setImageUrl(image_url ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -98,8 +102,6 @@ export default function Upload() {
         return;
       }
 
-      // NOTE: real image upload/storage isn't built yet (Phase 7). Using a
-      // placeholder URL for now so the record can still be created.
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/wardrobe/items`, {
         method: "POST",
         headers: {
@@ -107,7 +109,7 @@ export default function Upload() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          image_url: preview ?? "https://placehold.co/400x500",
+          image_url: imageUrl ?? preview ?? "https://placehold.co/400x500",
           category: analysis.category,
           subcategory: analysis.subcategory,
           color: analysis.color,
