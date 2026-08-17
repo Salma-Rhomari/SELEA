@@ -38,6 +38,7 @@ export default function StyleMe() {
   const [savingIndex, setSavingIndex] = useState<number | null>(null);
   const [savedIndices, setSavedIndices] = useState<Set<number>>(new Set());
   const [outfitNames, setOutfitNames] = useState<Record<number, string>>({});
+  const [outfitErrors, setOutfitErrors] = useState<Record<number, string>>({});
 
   const generate = async () => {
     if (!mood) return;
@@ -45,6 +46,8 @@ export default function StyleMe() {
     setLoading(true);
     setOutfits(null);
     setSavedIndices(new Set());
+    setOutfitErrors({});
+    setOutfitNames({});
 
     try {
       const token = localStorage.getItem("selea_token");
@@ -67,7 +70,11 @@ export default function StyleMe() {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Failed to generate outfits");
+        throw new Error(
+          typeof data?.detail === "string"
+            ? data.detail
+            : "Failed to generate outfits"
+        );
       }
 
       const data = await res.json();
@@ -80,7 +87,7 @@ export default function StyleMe() {
   };
 
   const saveOutfit = async (outfit: GeneratedOutfit, index: number) => {
-    setError("");
+    setOutfitErrors((prev) => ({ ...prev, [index]: "" }));
     setSavingIndex(index);
 
     try {
@@ -106,14 +113,27 @@ export default function StyleMe() {
         }),
       });
 
+      if (res.status === 409) {
+        setOutfitErrors((prev) => ({
+          ...prev,
+          [index]: "You've already saved this exact outfit.",
+        }));
+        return;
+      }
+
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.detail || "Failed to save outfit");
+        throw new Error(
+          typeof data?.detail === "string" ? data.detail : "Failed to save outfit"
+        );
       }
 
       setSavedIndices((prev) => new Set(prev).add(index));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setOutfitErrors((prev) => ({
+        ...prev,
+        [index]: err instanceof Error ? err.message : "Something went wrong",
+      }));
     } finally {
       setSavingIndex(null);
     }
@@ -153,11 +173,21 @@ export default function StyleMe() {
           />
         </div>
 
-        <Button variant="primary" onClick={generate} disabled={!mood || loading}>
-          {loading ? "Generating…" : "Generate outfits"}
-        </Button>
+        <div className="flex gap-4">
+          <Button variant="primary" onClick={generate} disabled={!mood || loading}>
+            {loading ? "Generating…" : "Generate outfits"}
+          </Button>
 
-        {error && <p className="text-sm text-red-700 mt-4">{error}</p>}
+          {outfits && (
+            <Button variant="secondary" onClick={generate} disabled={!mood || loading}>
+              {loading ? "Regenerating…" : "Regenerate"}
+            </Button>
+          )}
+        </div>
+
+        {error && (
+          <p className="text-sm text-red-700 mt-4 max-w-md">{error}</p>
+        )}
 
         {outfits && outfits.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16">
@@ -186,8 +216,11 @@ export default function StyleMe() {
                       }
                       placeholder={`${mood} outfit`}
                     />
+                    {outfitErrors[index] && (
+                      <p className="text-xs text-red-700">{outfitErrors[index]}</p>
+                    )}
                     <Button
-                      variant="secondary"
+                      variant="accent"
                       className="w-full"
                       onClick={() => saveOutfit(outfit, index)}
                       disabled={savingIndex === index}
@@ -202,7 +235,9 @@ export default function StyleMe() {
         )}
 
         {outfits && outfits.length === 0 && (
-          <p className="text-taupe mt-16">No outfits found for this mood. Try another one or add more items to your wardrobe.</p>
+          <p className="text-taupe mt-16">
+            No outfits found for this mood. Try another one or add more items to your wardrobe.
+          </p>
         )}
       </div>
     </main>

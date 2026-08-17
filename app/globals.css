@@ -6,6 +6,7 @@
   --color-ink: #1C1B19;
   --color-taupe: #A89A8B;
   --color-beige: #E4D9C9;
+  --color-burgundy: #6E1428;
 }
 
 @theme inline {
@@ -21,4 +22,9 @@ body {
 
 h1, h2, h3 {
   font-family: var(--font-serif);
+}
+
+::selection {
+  background: var(--color-burgundy);
+  color: var(--color-ivory);
 }

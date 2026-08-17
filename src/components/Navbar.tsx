@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 
@@ -15,6 +15,7 @@ const NAV_LINKS = [
 
 export default function Navbar() {
   const router = useRouter();
+  const pathname = usePathname();
   const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
@@ -39,7 +40,11 @@ export default function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-xs uppercase tracking-wide text-ink hover:text-taupe transition-colors"
+              className={`text-xs uppercase tracking-wide transition-colors ${
+                pathname === link.href
+                  ? "text-burgundy border-b border-burgundy pb-1"
+                  : "text-ink hover:text-taupe"
+              }`}
             >
               {link.label}
             </Link>

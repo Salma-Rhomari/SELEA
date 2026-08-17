@@ -1,7 +1,6 @@
 import { ButtonHTMLAttributes, ReactNode } from "react";
-
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "ghost" | "accent";
   children: ReactNode;
 };
 
@@ -12,6 +11,7 @@ const variants = {
   primary: "bg-ink text-ivory hover:bg-taupe",
   secondary: "border border-ink text-ink hover:bg-ink hover:text-ivory",
   ghost: "text-ink underline underline-offset-4 hover:text-taupe px-0 py-0",
+  accent: "bg-burgundy text-ivory hover:bg-ink",
 };
 
 export default function Button({
