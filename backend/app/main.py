@@ -5,6 +5,8 @@ from fastapi.staticfiles import StaticFiles
 from app.routers import auth, wardrobe
 from app.config import settings
 from app.routers import outfits
+from app.routers import analytics
+
 app = FastAPI(title="SELÉA API")
 
 app.add_middleware(
@@ -21,6 +23,7 @@ app.mount("/uploads", StaticFiles(directory=settings.upload_dir), name="uploads"
 app.include_router(auth.router)
 app.include_router(wardrobe.router)
 app.include_router(outfits.router)
+app.include_router(analytics.router)
 
 @app.get("/health")
 def health():
