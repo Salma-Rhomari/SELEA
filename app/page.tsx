@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/card";
@@ -26,6 +29,15 @@ const STEPS = [
 ];
 
 export default function Home() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [checked, setChecked] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem("selea_token");
+    setIsLoggedIn(!!token);
+    setChecked(true);
+  }, []);
+
   return (
     <main className="flex-1 bg-ivory">
       {/* Hero */}
@@ -33,17 +45,31 @@ export default function Home() {
         <h1 className="font-serif text-7xl md:text-8xl tracking-widest text-ink mb-6">
           SELÉA
         </h1>
-        <p className="font-sans text-taupe text-lg md:text-xl tracking-wide max-w-md mb-10">
-          Your digital wardrobe, styled by AI.
-        </p>
-        <div className="flex gap-4">
-          <Link href="/signup">
-            <Button variant="primary">Get Started</Button>
-          </Link>
-          <Link href="/login">
-            <Button variant="secondary">Sign In</Button>
-          </Link>
-        </div>
+
+        {!checked ? null : isLoggedIn ? (
+          <>
+            <p className="font-sans text-taupe text-lg md:text-xl tracking-wide max-w-md mb-10">
+              Welcome back. Ready for your next look?
+            </p>
+            <Link href="/dashboard">
+              <Button variant="accent">Go to Dashboard</Button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="font-sans text-taupe text-lg md:text-xl tracking-wide max-w-md mb-10">
+              Your digital wardrobe, styled by AI.
+            </p>
+            <div className="flex gap-4">
+              <Link href="/signup">
+                <Button variant="primary">Get Started</Button>
+              </Link>
+              <Link href="/login">
+                <Button variant="secondary">Sign In</Button>
+              </Link>
+            </div>
+          </>
+        )}
       </section>
 
       {/* How it works */}
