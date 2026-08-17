@@ -175,7 +175,7 @@ def list_outfits(
 
 @router.delete("/{outfit_id}")
 def delete_outfit(
-    outfit_id: int,
+    outfit_id: str,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth_utils.get_current_user),
 ):
@@ -195,7 +195,7 @@ def delete_outfit(
 
 @router.post("/{outfit_id}/feedback")
 def give_feedback(
-    outfit_id: int,
+    outfit_id: str,
     payload: FeedbackRequest,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth_utils.get_current_user),
