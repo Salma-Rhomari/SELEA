@@ -78,11 +78,10 @@ def generate_outfits(
     if not suggestions:
         raise HTTPException(
             status_code=404,
-            detail="No matching items found for this mood/occasion. Try adding more items or changing filters.",
+            detail=f"No '{payload.mood}' outfits found. Add a few tops, bottoms, or a dress that match this mood, then try again.",
         )
 
     return suggestions
-
 
 @router.post("/", response_model=OutfitOut)
 def save_outfit(
@@ -101,6 +100,17 @@ def save_outfit(
     if len(items) != len(payload.item_ids):
         raise HTTPException(status_code=400, detail="One or more items not found")
 
+    # Duplicate check: same exact set of items already saved as an outfit
+    new_item_set = set(payload.item_ids)
+    existing_outfits = db.query(models.Outfit).filter(models.Outfit.user_id == current_user.id).all()
+    for existing in existing_outfits:
+        existing_item_ids = {
+            oi.clothing_item_id
+            for oi in db.query(models.OutfitItem).filter(models.OutfitItem.outfit_id == existing.id).all()
+        }
+        if existing_item_ids == new_item_set:
+            raise HTTPException(status_code=409, detail="This exact outfit is already saved")
+
     outfit = models.Outfit(
         user_id=current_user.id,
         name=payload.name,
@@ -109,7 +119,7 @@ def save_outfit(
         weather=payload.weather,
     )
     db.add(outfit)
-    db.flush()  # get outfit.id before commit
+    db.flush()
 
     for item in items:
         db.add(models.OutfitItem(outfit_id=outfit.id, clothing_item_id=item.id))
@@ -134,7 +144,6 @@ def save_outfit(
             for item in items
         ],
     )
-
 
 @router.get("/", response_model=list[OutfitOut])
 def list_outfits(
