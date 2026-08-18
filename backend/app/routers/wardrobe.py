@@ -9,6 +9,7 @@ from app import models, schemas, auth as auth_utils
 import os
 import uuid
 from app.config import settings
+from app.services.cloudinary_service import upload_image
 
 
 router = APIRouter(prefix="/wardrobe", tags=["wardrobe"])
@@ -108,13 +109,11 @@ async def analyze_item(
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"AI analysis failed: {str(e)}")
 
-    ext = os.path.splitext(file.filename or "")[1] or ".jpg"
-    filename = f"{uuid.uuid4()}{ext}"
-    filepath = os.path.join(settings.upload_dir, filename)
+    try:
+        image_url = upload_image(image_bytes)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Image upload failed: {str(e)}")
 
-    with open(filepath, "wb") as f:
-        f.write(image_bytes)
-
-    result["image_url"] = f"http://localhost:8000/uploads/{filename}"
+    result["image_url"] = image_url
 
     return result

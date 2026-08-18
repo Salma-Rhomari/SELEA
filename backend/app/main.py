@@ -9,9 +9,15 @@ from app.routers import analytics
 
 app = FastAPI(title="SELÉA API")
 
+allowed_origins = [
+    "http://localhost:3000",
+    settings.frontend_url,
+]
+allowed_origins = [origin for origin in allowed_origins if origin]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

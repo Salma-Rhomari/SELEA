@@ -8,6 +8,10 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     vision_model: str = "gemini-3.6-flash"
     upload_dir: str = "uploads"
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+    frontend_url: str = ""
 
     class Config:
         env_file = ".env"
